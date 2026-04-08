@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(env)",
+      "Bash(pbcopy)",
+      "Bash(ls /Users/ziad/safer-web/app/trips/[id])",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Skill(claude-api)",
+      "Bash(mkdir -p /Users/ziad/safer-web/app/api/trips/[id]/match)",
+      "Bash(mkdir -p /Users/ziad/safer-web/app/trips/[id]/results)",
+      "Bash(head -50 /Users/ziad/safer-web/app/login/page.tsx /Users/ziad/safer-web/app/signup/page.tsx /Users/ziad/safer-web/app/onboarding/page.tsx /Users/ziad/safer-web/app/trips/[id]/preferences/page.tsx /Users/ziad/safer-web/app/trips/[id]/results/page.tsx)",
+      "Bash(head -30 /Users/ziad/safer-web/app/api/trips/[id]/hotels/route.ts)",
+      "Bash(curl -s -X GET \"https://api.duffel.com/air/airports?query=new+york\" -H \"Authorization: Bearer duffel_test_iDjg1867Zo6luQUUayv3ybBfJ1PdkcFOnMPuC4nH1qD\" -H \"Duffel-Version: v2\" -H \"Accept: application/json\")",
+      "Bash(node:*)",
+      "Bash(git:*)"
+    ]
+  }
+}
