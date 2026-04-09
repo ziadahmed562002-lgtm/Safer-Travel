@@ -12,6 +12,7 @@ const TABS = [
 
 // Paths where the nav should not appear
 const EXCLUDED_PREFIXES = [
+  "/",
   "/login",
   "/signup",
   "/join",
