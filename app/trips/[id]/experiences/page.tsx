@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, useMemo, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +35,7 @@ export default function ExperiencesPage({ params }: { params: Promise<{ id: stri
   const [error, setError] = useState("");
   const [savedStates, setSavedStates] = useState<Record<number, SavedState>>({});
   const [bookingNeeds, setBookingNeeds] = useState<BookingNeeds | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
   useEffect(() => {
     async function load() {
@@ -107,8 +108,37 @@ export default function ExperiencesPage({ params }: { params: Promise<{ id: stri
     setSavedStates((s) => ({ ...s, [index]: saveError ? "error" : "saved" }));
   }
 
+  const CATEGORY_KEYWORDS: Record<string, string[]> = {
+    Adventure: ["hike", "hiking", "climb", "surf", "dive", "diving", "quad", "safari", "kayak", "zip", "rafting", "desert", "dune", "bungee"],
+    Food: ["food", "culinary", "cooking", "dinner", "lunch", "tasting", "wine", "beer", "market", "tour food", "street food", "gastro"],
+    Culture: ["museum", "history", "historic", "temple", "mosque", "palace", "heritage", "art", "architecture", "tour", "guided"],
+    Water: ["boat", "cruise", "sail", "snorkel", "swim", "beach", "island", "lagoon", "sea", "ocean", "river"],
+  };
+
+  function getCategory(title: string): string {
+    const lower = title.toLowerCase();
+    for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+      if (keywords.some((k) => lower.includes(k))) return cat;
+    }
+    return "Culture";
+  }
+
+  const categories = useMemo(() => {
+    if (!recommendations.length) return [];
+    const cats = new Set(recommendations.map((r) => getCategory(r.title)));
+    return ["All", ...Array.from(cats)];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recommendations]);
+
+  const filtered = useMemo(() =>
+    activeCategory === "All"
+      ? recommendations
+      : recommendations.filter((r) => getCategory(r.title) === activeCategory),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [recommendations, activeCategory]);
+
   return (
-    <main className="relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
+    <main className="page-enter relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0"
@@ -176,13 +206,34 @@ export default function ExperiencesPage({ params }: { params: Promise<{ id: stri
           <ErrorState message={error} tripId={id} />
         ) : (
           <>
+            {/* Category pills */}
+            {categories.length > 2 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95"
+                    style={{
+                      background: activeCategory === cat ? "var(--teal)" : "var(--cream)",
+                      color: activeCategory === cat ? "var(--cream)" : "var(--ink-muted)",
+                      border: `1.5px solid ${activeCategory === cat ? "var(--teal)" : "var(--border)"}`,
+                      fontFamily: "var(--font-dm-sans)",
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex flex-col gap-4">
-              {recommendations.map((rec, i) => (
+              {filtered.map((rec, i) => (
                 <ExperienceCard
-                  key={i}
+                  key={rec.productCode || i}
                   rec={rec}
-                  saveState={savedStates[i] ?? "idle"}
-                  onSave={() => handleSave(rec, i)}
+                  saveState={savedStates[recommendations.indexOf(rec)] ?? "idle"}
+                  onSave={() => handleSave(rec, recommendations.indexOf(rec))}
                 />
               ))}
             </div>
@@ -234,12 +285,12 @@ function ExperienceCard({
 
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden"
+      className="card-lift flex flex-col rounded-2xl overflow-hidden"
       style={{
         background: "var(--cream)",
-        border: `1.5px solid ${saved ? "rgba(46,125,107,0.3)" : "var(--border)"}`,
-        boxShadow: "0 1px 10px rgba(26,22,18,0.05)",
-        transition: "border-color 0.2s",
+        border: `1.5px solid ${saved ? "rgba(46,125,107,0.35)" : "var(--border)"}`,
+        boxShadow: saved ? "0 1px 10px rgba(46,125,107,0.1)" : "0 1px 10px rgba(26,22,18,0.05)",
+        transition: "border-color 0.2s, box-shadow 0.2s",
       }}
     >
       {/* Photo hero */}
@@ -311,39 +362,40 @@ function ExperienceCard({
             href={rec.webURL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-center transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
             style={{
-              background: "var(--teal)",
-              color: "var(--cream)",
+              background: "var(--burnt-orange)",
+              color: "#fff",
               fontFamily: "var(--font-dm-sans)",
+              boxShadow: "0 3px 12px rgba(184,92,26,0.22)",
             }}
           >
+            Book on Viator
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
               <polyline points="15 3 21 3 21 9" />
               <line x1="10" y1="14" x2="21" y2="3" />
             </svg>
-            Book on Viator
           </a>
 
           {/* Save to itinerary */}
           <button
             onClick={onSave}
             disabled={saved || saving}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-default flex items-center justify-center gap-1.5"
+            className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-default flex items-center justify-center gap-1.5${saved ? " success-pop" : ""}`}
             style={{
               background: saved ? "rgba(46,125,107,0.12)" : saving ? "var(--border)" : "var(--sand)",
               color: saved ? "var(--teal)" : saving ? "var(--ink-faint)" : "var(--ink-muted)",
-              border: `1px solid ${saved ? "rgba(46,125,107,0.25)" : "var(--border)"}`,
+              border: `1.5px solid ${saved ? "rgba(46,125,107,0.3)" : "var(--border)"}`,
               fontFamily: "var(--font-dm-sans)",
             }}
           >
             {saved ? (
               <>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Saved
+                Saved ✓
               </>
             ) : saving ? (
               <>

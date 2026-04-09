@@ -175,7 +175,7 @@ export default function PlanPage({ params }: { params: Promise<{ id: string }> }
   const anySelected = needs.flights || needs.accommodation || needs.experiences;
 
   return (
-    <main className="relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
+    <main className="page-enter relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
       {/* Hero */}
       <div className="relative w-full h-56 overflow-hidden">
         {dest.image_url ? (
@@ -416,17 +416,28 @@ function SelectNeedsStep({
               style={{
                 background: on ? bg : "var(--cream)",
                 border: `1.5px solid ${on ? border : "var(--border)"}`,
-                boxShadow: on ? `0 2px 12px ${bg}` : "none",
+                boxShadow: on ? `0 4px 16px ${bg}` : "none",
+                transform: on ? "scale(1)" : "scale(0.99)",
               }}
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all"
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all relative"
                 style={{
                   background: on ? bg : "var(--sand)",
                   color: on ? color : "var(--ink-faint)",
                   border: `1px solid ${on ? border : "var(--border)"}`,
                 }}
               >
+                {on && (
+                  <div
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center success-pop"
+                    style={{ background: color }}
+                  >
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                )}
                 {icon}
               </div>
               <div className="flex-1 min-w-0">
@@ -443,13 +454,14 @@ function SelectNeedsStep({
               {/* Toggle */}
               <div
                 className="shrink-0 w-9 h-5 rounded-full relative transition-all"
-                style={{ background: on ? color : "var(--border)" }}
+                style={{ background: on ? color : "var(--border)", transition: "background 0.2s ease" }}
               >
                 <div
-                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white"
                   style={{
                     left: on ? "calc(100% - 1.125rem)" : "0.125rem",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                    transition: "left 0.2s cubic-bezier(0.34,1.2,0.64,1)",
                   }}
                 />
               </div>
@@ -561,15 +573,20 @@ function PlanStep({
       {/* Go to checkout */}
       <Link
         href={`/trips/${id}/checkout`}
-        className="w-full py-3.5 rounded-xl text-sm font-semibold text-center transition-all active:scale-[0.98] mt-1"
+        className="w-full py-4 rounded-2xl font-bold text-center transition-all active:scale-[0.98] mt-1 flex items-center justify-center gap-2"
         style={{
-          background: "var(--cream)",
-          color: "var(--ink-muted)",
+          background: "var(--burnt-orange)",
+          color: "#fff",
           fontFamily: "var(--font-dm-sans)",
-          border: "1.5px solid var(--border)",
+          fontSize: "0.9375rem",
+          boxShadow: "0 4px 18px rgba(184,92,26,0.26)",
         }}
       >
-        Skip to checkout →
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        Review & Checkout
       </Link>
     </div>
   );
@@ -588,7 +605,7 @@ function PlanSection({
 }) {
   return (
     <div
-      className="flex items-center gap-4 p-4 rounded-2xl"
+      className="card-lift flex items-center gap-4 p-4 rounded-2xl"
       style={{
         background: "var(--cream)",
         border: "1.5px solid var(--border)",

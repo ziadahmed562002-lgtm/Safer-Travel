@@ -186,7 +186,7 @@ export default function HotelsPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <>
-      <main className="relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
+      <main className="relative flex flex-col min-h-dvh page-enter" style={{ background: "var(--sand)" }}>
         <div
           aria-hidden
           className="pointer-events-none fixed inset-0"
@@ -478,7 +478,7 @@ function HotelCard({
 
   return (
     <div
-      className="flex flex-col rounded-3xl overflow-hidden"
+      className="flex flex-col rounded-3xl overflow-hidden card-lift"
       style={{
         background: "var(--cream)",
         border: `1.5px solid ${isTopPick ? "rgba(200,150,62,0.35)" : "var(--border)"}`,

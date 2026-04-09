@@ -1,9 +1,27 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+
+/* Count-up animation hook */
+function useCountUp(target: number, duration = 900, enabled = false) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+      else setValue(target);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration, enabled]);
+  return value;
+}
 
 type DestinationInline = {
   name: string;
@@ -165,7 +183,7 @@ export default function ResultsPage({ params }: { params: Promise<{ id: string }
 
   return (
     <main
-      className="relative flex flex-col min-h-dvh px-6 py-12"
+      className="relative flex flex-col min-h-dvh px-6 py-12 page-enter"
       style={{ background: "var(--sand)" }}
     >
       {/* Subtle gradient */}
@@ -214,12 +232,13 @@ export default function ResultsPage({ params }: { params: Promise<{ id: string }
         {/* Cards */}
         <div className="flex flex-col gap-6">
           {results.map((match, index) => (
-            <DestinationCard
-              key={`${match.destination_id ?? match.destination_inline.name}-${index}`}
-              match={match}
-              rank={index + 1}
-              tripId={id}
-            />
+            <div key={`${match.destination_id ?? match.destination_inline.name}-${index}`} className={`stagger-${Math.min(index + 1, 5)}`}>
+              <DestinationCard
+                match={match}
+                rank={index + 1}
+                tripId={id}
+              />
+            </div>
           ))}
         </div>
 
@@ -244,6 +263,23 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
   const { destination, destination_inline, ai_score, match_explanation, personality_scores, compromise_notes } = match;
   const [selecting, setSelecting] = useState(false);
   const [selectError, setSelectError] = useState("");
+  const [selected, setSelected] = useState(false);
+
+  // Animate score bars from 0 → actual on mount
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [barsVisible, setBarsVisible] = useState(false);
+  const displayScore = useCountUp(ai_score, 900, barsVisible);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setBarsVisible(true); },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   async function handleSelect() {
     setSelecting(true);
@@ -267,7 +303,8 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
       return;
     }
 
-    router.push(`/trips/${tripId}/plan`);
+    setSelected(true);
+    setTimeout(() => router.push(`/trips/${tripId}/plan`), 600);
   }
 
   // Resolve display values: prefer DB record if available, fall back to inline
@@ -300,11 +337,12 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
 
   return (
     <div
-      className="flex flex-col rounded-3xl overflow-hidden"
+      ref={cardRef}
+      className="flex flex-col rounded-3xl overflow-hidden card-lift"
       style={{
         background: "var(--cream)",
-        border: "1.5px solid var(--border)",
-        boxShadow: "0 2px 24px rgba(26,22,18,0.07)",
+        border: rank === 1 ? "1.5px solid rgba(46,125,107,0.35)" : "1.5px solid var(--border)",
+        boxShadow: rank === 1 ? "0 4px 28px rgba(46,125,107,0.1)" : "0 2px 24px rgba(26,22,18,0.07)",
       }}
     >
       {/* Image or gradient placeholder */}
@@ -351,11 +389,11 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
           {rankLabel}
         </div>
 
-        {/* Score badge */}
+        {/* Score badge — count-up animation */}
         <div
           className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1.5 rounded-full"
           style={{
-            background: "rgba(26,22,18,0.65)",
+            background: "rgba(26,22,18,0.7)",
             backdropFilter: "blur(8px)",
           }}
         >
@@ -363,10 +401,10 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
           <span
-            className="text-xs font-bold"
-            style={{ color: "white", fontFamily: "var(--font-dm-sans)" }}
+            className="text-xs font-bold tabular-nums"
+            style={{ color: "white", fontFamily: "var(--font-dm-sans)", minWidth: 24 }}
           >
-            {ai_score.toFixed(1)}
+            {displayScore.toFixed(1)}
           </span>
         </div>
       </div>
@@ -430,13 +468,13 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
                     </span>
                   </div>
                   <div
-                    className="h-1.5 rounded-full overflow-hidden"
+                    className="h-2 rounded-full overflow-hidden"
                     style={{ background: "var(--border)" }}
                   >
                     <div
-                      className="h-full rounded-full transition-all duration-700"
+                      className="h-full rounded-full bar-fill"
                       style={{
-                        width: `${score}%`,
+                        width: barsVisible ? `${score}%` : "0%",
                         background:
                           score >= 75
                             ? "var(--teal)"
@@ -509,25 +547,36 @@ function DestinationCard({ match, rank, tripId }: { match: DestinationMatch; ran
         {/* CTA */}
         <button
           onClick={handleSelect}
-          disabled={selecting}
-          className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-70"
+          disabled={selecting || selected}
+          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] disabled:opacity-80"
           style={{
-            background: "var(--burnt-orange)",
+            background: selected ? "var(--teal)" : "var(--burnt-orange)",
             color: "var(--cream)",
             fontFamily: "var(--font-dm-sans)",
-            boxShadow: selecting ? "none" : "0 4px 16px rgba(184,92,26,0.22)",
+            boxShadow: selected ? "0 4px 20px rgba(46,125,107,0.28)" : selecting ? "none" : "0 6px 24px rgba(184,92,26,0.30)",
+            letterSpacing: "-0.01em",
+            transition: "background 0.3s ease, box-shadow 0.3s ease",
           }}
         >
-          {selecting ? (
+          {selected ? (
+            <span className="flex items-center justify-center gap-2 success-pop">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Destination selected!
+            </span>
+          ) : selecting ? (
             <span className="flex items-center justify-center gap-2">
-              <span
-                className="w-3.5 h-3.5 rounded-full border-2 animate-spin inline-block"
-                style={{ borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white" }}
-              />
+              <span className="w-4 h-4 rounded-full border-2 animate-spin inline-block" style={{ borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white" }} />
               Saving…
             </span>
           ) : (
-            "Select this destination"
+            <span className="flex items-center justify-center gap-2">
+              Select this destination
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </span>
           )}
         </button>
       </div>

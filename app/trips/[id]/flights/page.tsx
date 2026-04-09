@@ -195,7 +195,7 @@ export default function FlightsPage({ params }: { params: Promise<{ id: string }
 
   return (
     <>
-      <main className="relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
+      <main className="relative flex flex-col min-h-dvh page-enter" style={{ background: "var(--sand)" }}>
         <div
           aria-hidden
           className="pointer-events-none fixed inset-0"
@@ -465,6 +465,31 @@ function CitySection({
   );
 }
 
+/* Airline color based on first letter */
+function airlineColor(name: string): string {
+  const colors = ["#2E7D6B","#C8963E","#B85C1A","#C4695A","#4A6FA5","#6B5F55"];
+  return colors[(name.charCodeAt(0) ?? 0) % colors.length];
+}
+
+function AirlineBadge({ airline }: { airline: string }) {
+  const initials = airline.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  const color = airlineColor(airline);
+  return (
+    <div
+      style={{
+        width: 32, height: 32, borderRadius: 10,
+        background: color,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <span style={{ color: "#fff", fontSize: "0.65rem", fontWeight: 700, fontFamily: "var(--font-dm-sans)", letterSpacing: "0.02em" }}>
+        {initials}
+      </span>
+    </div>
+  );
+}
+
 function FlightCard({
   offer,
   isRoundTrip,
@@ -478,14 +503,16 @@ function FlightCard({
 }) {
   const outbound = offer.slices[0];
   const returnSlice = isRoundTrip ? offer.slices[1] : null;
+  const airline = outbound.segments[0]?.airline ?? "";
+  const stops = outbound.segments.length - 1;
 
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden"
+      className="flex flex-col rounded-2xl overflow-hidden card-lift"
       style={{
         background: "var(--cream)",
         border: `1.5px solid ${isCheapest ? "rgba(46,125,107,0.3)" : "var(--border)"}`,
-        boxShadow: isCheapest ? "0 2px 16px rgba(46,125,107,0.1)" : "0 1px 8px rgba(26,22,18,0.05)",
+        boxShadow: isCheapest ? "0 4px 20px rgba(46,125,107,0.12)" : "0 1px 8px rgba(26,22,18,0.05)",
       }}
     >
       {isCheapest && (
@@ -498,11 +525,37 @@ function FlightCard({
             borderBottom: "1px solid rgba(46,125,107,0.15)",
           }}
         >
-          Cheapest option
+          ✦ Cheapest option
         </div>
       )}
 
-      <div className="flex flex-col">
+      {/* Airline header row */}
+      <div className="flex items-center gap-3 px-4 pt-3 pb-1">
+        <AirlineBadge airline={airline} />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate" style={{ color: "var(--ink)", fontFamily: "var(--font-dm-sans)" }}>
+            {airline || "Airline"}
+          </p>
+          <p className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>
+            {stops === 0 ? (
+              <span style={{ color: "var(--teal)", fontWeight: 600 }}>Direct</span>
+            ) : (
+              `${stops} stop${stops > 1 ? "s" : ""}`
+            )}
+            {isRoundTrip ? " · Round trip" : " · One way"}
+          </p>
+        </div>
+        {/* Price hero */}
+        <div className="text-right">
+          <span className="text-xl font-bold" style={{ color: "var(--ink)", fontFamily: "var(--font-dm-sans)" }}>
+            {offer.total_currency === "USD" ? "$" : `${offer.total_currency} `}
+            {parseFloat(offer.total_amount).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </span>
+          <p className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>/ person</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col" style={{ borderTop: "1px solid var(--border)", marginTop: 4 }}>
         <SliceRow slice={outbound} label={isRoundTrip ? "Outbound" : undefined} />
         {returnSlice && (
           <>
@@ -512,34 +565,19 @@ function FlightCard({
         )}
       </div>
 
-      {/* Price + select */}
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        <div>
-          <span className="text-xl font-bold" style={{ color: "var(--ink)", fontFamily: "var(--font-dm-sans)" }}>
-            {offer.total_currency === "USD" ? "$" : `${offer.total_currency} `}
-            {parseFloat(offer.total_amount).toLocaleString("en-US", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}
-          </span>
-          <span className="text-xs ml-1" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>
-            / person
-          </span>
-        </div>
+      {/* Select button */}
+      <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)" }}>
         <button
           onClick={onSelect}
-          className="px-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+          className="w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.97] hover:brightness-105"
           style={{
             background: "var(--teal)",
             color: "var(--cream)",
             fontFamily: "var(--font-dm-sans)",
-            boxShadow: "0 2px 10px rgba(46,125,107,0.25)",
+            boxShadow: "0 3px 14px rgba(46,125,107,0.26)",
           }}
         >
-          Select
+          Select this flight →
         </button>
       </div>
     </div>

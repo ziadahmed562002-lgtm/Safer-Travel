@@ -13,6 +13,89 @@
   --border: #E8E0D4;
 }
 
+/* ── Page transition ────────────────────────────────────────────────────────── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter 0.38s ease forwards; }
+
+/* ── Onboarding step slide ──────────────────────────────────────────────────── */
+@keyframes stepEnter {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.step-enter { animation: stepEnter 0.32s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+/* ── Stagger variants ───────────────────────────────────────────────────────── */
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-1 { animation: fadeUpIn 0.45s ease 0.05s both; }
+.stagger-2 { animation: fadeUpIn 0.45s ease 0.13s both; }
+.stagger-3 { animation: fadeUpIn 0.45s ease 0.21s both; }
+.stagger-4 { animation: fadeUpIn 0.45s ease 0.29s both; }
+.stagger-5 { animation: fadeUpIn 0.45s ease 0.37s both; }
+
+/* ── Card hover lift ────────────────────────────────────────────────────────── */
+.card-lift {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: default;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 36px rgba(26,22,18,0.11) !important;
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--cream) 25%, #EDE8DF 50%, var(--cream) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Input focus glow ───────────────────────────────────────────────────────── */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46,125,107,0.15);
+}
+
+/* ── Success flash ──────────────────────────────────────────────────────────── */
+@keyframes successPop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-pop { animation: successPop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ── Bounce tab ─────────────────────────────────────────────────────────────── */
+@keyframes tabBounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-4px); }
+  70%       { transform: translateY(-1px); }
+}
+.tab-bounce { animation: tabBounce 0.35s ease; }
+
+/* ── Score bar fill (starts at 0, transition to final width via JS) ─────────── */
+.bar-fill {
+  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── Shake on error ─────────────────────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+.shake { animation: shake 0.4s ease; }
+
 @theme inline {
   --color-sand: var(--sand);
   --color-cream: var(--cream);

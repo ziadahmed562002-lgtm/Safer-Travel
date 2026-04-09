@@ -191,7 +191,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   })();
 
   return (
-    <main className="relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
+    <main className="page-enter relative flex flex-col min-h-dvh" style={{ background: "var(--sand)" }}>
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0"
@@ -389,14 +389,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
             {/* Totals — shown per currency, never combined across currencies */}
             {(hasFlightCost || hasHotelCost) && (
               <div
-                className="flex flex-col gap-0 px-5 py-4 rounded-2xl"
+                className="flex flex-col gap-0 px-5 py-5 rounded-2xl"
                 style={{
-                  background: "var(--cream)",
-                  border: "1.5px solid var(--border)",
-                  boxShadow: "0 1px 10px rgba(26,22,18,0.05)",
+                  background: "linear-gradient(135deg, rgba(46,125,107,0.06) 0%, rgba(200,150,62,0.04) 100%)",
+                  border: "1.5px solid rgba(46,125,107,0.18)",
+                  boxShadow: "0 2px 16px rgba(46,125,107,0.08)",
                 }}
               >
-                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--teal)", fontFamily: "var(--font-dm-sans)" }}>
                   Estimated totals
                 </p>
 
@@ -429,9 +429,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                 )}
 
                 {hasFlightCost && hasHotelCost && currenciesMatch && (
-                  <div className="flex items-center justify-between pt-2 mt-1" style={{ borderTop: "1px solid var(--border)" }}>
-                    <span className="text-xs font-semibold" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-dm-sans)" }}>Combined</span>
-                    <span className="text-xl font-bold" style={{ color: "var(--ink)", fontFamily: "var(--font-playfair)" }}>
+                  <div className="flex items-center justify-between pt-3 mt-2" style={{ borderTop: "1.5px solid rgba(46,125,107,0.2)" }}>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-dm-sans)" }}>Total estimate</span>
+                      <span className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>Flights + hotel</span>
+                    </div>
+                    <span className="text-3xl font-bold" style={{ color: "var(--ink)", fontFamily: "var(--font-playfair)" }}>
                       {formatCurrency(flightTotal! + hotelTotal!, flightCurrency)}
                     </span>
                   </div>
@@ -442,22 +445,46 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
             {/* Book button */}
             <div className="flex flex-col gap-3 pt-1">
               <button
-                className="w-full py-4 rounded-xl text-sm font-semibold text-center transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full py-5 rounded-2xl font-bold text-center transition-all active:scale-[0.98] flex items-center justify-center gap-2.5"
                 style={{
-                  background: "var(--burnt-orange)",
-                  color: "var(--cream)",
+                  background: "linear-gradient(135deg, var(--burnt-orange) 0%, #d4631a 100%)",
+                  color: "#fff",
                   fontFamily: "var(--font-dm-sans)",
-                  boxShadow: "0 4px 16px rgba(184,92,26,0.24)",
+                  fontSize: "1rem",
+                  boxShadow: "0 6px 24px rgba(184,92,26,0.32)",
                   cursor: "default",
+                  letterSpacing: "-0.01em",
                 }}
                 disabled
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
                 {bookLabel}
               </button>
+
+              {/* Trust signals */}
+              <div className="flex items-center justify-center gap-4 py-1">
+                <div className="flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>Secure</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>No hidden fees</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" />
+                  </svg>
+                  <span className="text-xs" style={{ color: "var(--ink-faint)", fontFamily: "var(--font-dm-sans)" }}>Cancel anytime</span>
+                </div>
+              </div>
 
               {/* Stripe coming soon badge */}
               <div
@@ -496,7 +523,7 @@ function Section({
 }) {
   return (
     <div
-      className="flex flex-col gap-0.5 p-5 rounded-2xl"
+      className="card-lift flex flex-col gap-0.5 p-5 rounded-2xl"
       style={{
         background: "var(--cream)",
         border: "1.5px solid var(--border)",
@@ -559,11 +586,11 @@ function EmptySelection({ label, linkHref, linkLabel }: { label: string; linkHre
 function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      {[1, 2, 3].map((i) => (
+      {[140, 180, 100].map((h, i) => (
         <div
           key={i}
-          className="h-28 rounded-2xl animate-pulse"
-          style={{ background: "var(--cream)", border: "1.5px solid var(--border)" }}
+          className="skeleton rounded-2xl"
+          style={{ height: h, border: "1.5px solid var(--border)" }}
         />
       ))}
     </div>

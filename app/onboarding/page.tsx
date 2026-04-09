@@ -272,7 +272,8 @@ function OnboardingContent() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 flex flex-col items-center px-6 pt-6 pb-32 max-w-sm mx-auto w-full">
+      <div className="flex-1 flex flex-col items-center px-6 pt-6 pb-32 max-w-sm mx-auto w-full overflow-hidden">
+        <div key={step} className="step-enter w-full flex flex-col flex-1">
         {step === 1 && (
           <Step1
             value={prefs.travelStyle}
@@ -337,6 +338,7 @@ function OnboardingContent() {
             saving={saving}
           />
         )}
+        </div>
       </div>
     </main>
   );

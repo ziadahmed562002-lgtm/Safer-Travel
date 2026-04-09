@@ -169,15 +169,29 @@ function TripCard({
     );
   }
 
+  // Gradient accent based on destination name hash
+  const destName = trip.selected_destination?.name?.toLowerCase() ?? "";
+  const accentGradient = /dubai|desert|egypt|morocco|marrakech/.test(destName)
+    ? "linear-gradient(90deg, var(--gold) 0%, #E8B060 100%)"
+    : /maldives|bali|beach|island/.test(destName)
+    ? "linear-gradient(90deg, #2E9E85 0%, var(--teal) 100%)"
+    : /istanbul|rome|paris|culture/.test(destName)
+    ? "linear-gradient(90deg, var(--rose) 0%, #D4806E 100%)"
+    : "linear-gradient(90deg, var(--teal) 0%, var(--gold) 100%)";
+
   return (
     <div
-      className="flex flex-col gap-4 p-5 rounded-3xl transition-all"
+      className="flex flex-col rounded-3xl card-lift overflow-hidden"
       style={{
         background: "var(--cream)",
         border: "1.5px solid var(--border)",
         boxShadow: "0 2px 16px rgba(26,22,18,0.05)",
       }}
     >
+      {/* Destination gradient stripe */}
+      <div style={{ height: 4, background: accentGradient }} />
+
+      <div className="flex flex-col gap-4 p-5">
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1 min-w-0 flex-1">
@@ -307,7 +321,7 @@ function TripCard({
       {/* Continue button */}
       <Link
         href={continueHref(trip)}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.97] hover:brightness-110"
         style={{
           background: "var(--burnt-orange)",
           color: "var(--cream)",
@@ -320,6 +334,7 @@ function TripCard({
           <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       </Link>
+      </div>
     </div>
   );
 }
@@ -327,49 +342,71 @@ function TripCard({
 // Landing CTAs shown when user has no trips
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center text-center gap-8 max-w-sm w-full mx-auto">
-      <div className="flex flex-col gap-2">
-        <p
-          className="text-xl leading-snug font-medium"
-          style={{ fontFamily: "var(--font-playfair)", color: "var(--ink)" }}
-        >
-          No trips yet.
-        </p>
-        <p
-          className="text-base leading-snug"
-          style={{ fontFamily: "var(--font-playfair)", color: "var(--ink-muted)", fontStyle: "italic" }}
-        >
-          Start one or join a friend&apos;s.
-        </p>
+    <div className="flex flex-col items-center text-center gap-8 max-w-sm w-full mx-auto stagger-1">
+      {/* CSS illustration */}
+      <div className="relative w-full h-44 flex items-center justify-center">
+        {/* Sky gradient blob */}
+        <div style={{ position: "absolute", inset: 0, borderRadius: 24, background: "linear-gradient(160deg, rgba(46,125,107,0.08) 0%, rgba(200,150,62,0.06) 100%)", border: "1.5px solid var(--border)" }} />
+        {/* Clouds */}
+        <div style={{ position: "absolute", top: 20, left: 24, width: 48, height: 18, borderRadius: 99, background: "rgba(255,255,255,0.7)", boxShadow: "0 2px 8px rgba(26,22,18,0.06)" }} />
+        <div style={{ position: "absolute", top: 14, left: 44, width: 36, height: 14, borderRadius: 99, background: "rgba(255,255,255,0.5)" }} />
+        <div style={{ position: "absolute", top: 24, right: 32, width: 40, height: 16, borderRadius: 99, background: "rgba(255,255,255,0.6)", boxShadow: "0 2px 8px rgba(26,22,18,0.05)" }} />
+        {/* Globe */}
+        <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", width: 64, height: 64 }}>
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="30" fill="rgba(46,125,107,0.1)" stroke="var(--teal)" strokeWidth="1.5" />
+            <ellipse cx="32" cy="32" rx="14" ry="30" stroke="var(--teal)" strokeWidth="1" strokeDasharray="3 2" />
+            <line x1="3" y1="32" x2="61" y2="32" stroke="var(--teal)" strokeWidth="1" strokeDasharray="3 2" />
+            <line x1="32" y1="3" x2="32" y2="61" stroke="var(--teal)" strokeWidth="1" strokeDasharray="3 2" />
+          </svg>
+        </div>
+        {/* Plane */}
+        <div style={{ position: "absolute", top: 36, left: "50%", transform: "translateX(-30%) rotate(-8deg)" }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--burnt-orange)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 21 4s-2 0-3.5 1.5L14 9 5.8 7.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 3.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+          </svg>
+        </div>
+        {/* Pin dots */}
+        {[{t:48,l:"28%",c:"var(--gold)"},{t:32,l:"60%",c:"var(--teal)"},{t:52,l:"68%",c:"var(--rose)"}].map((p,i)=>(
+          <div key={i} style={{ position:"absolute", top:p.t, left:p.l, width:8, height:8, borderRadius:"50%", background:p.c, boxShadow:`0 0 0 3px ${p.c}22` }} />
+        ))}
       </div>
 
-      <div className="flex items-center gap-3 w-full">
-        <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--gold)" }} />
-        <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+      <div className="flex flex-col gap-2">
+        <h2
+          className="text-2xl font-bold leading-snug"
+          style={{ fontFamily: "var(--font-playfair)", color: "var(--ink)" }}
+        >
+          Your first adventure starts here.
+        </h2>
+        <p
+          className="text-base leading-relaxed"
+          style={{ fontFamily: "var(--font-dm-sans)", color: "var(--ink-muted)" }}
+        >
+          Start a trip and invite your group — Safer handles the rest.
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 w-full">
         <Link
           href="/trips/new"
-          className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.97]"
           style={{
             background: "var(--burnt-orange)",
             color: "var(--cream)",
             fontFamily: "var(--font-dm-sans)",
-            boxShadow: "0 4px 20px rgba(184,92,26,0.28)",
+            boxShadow: "0 6px 24px rgba(184,92,26,0.32)",
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v8M8 12h8" />
+            <path d="M12 5v14M5 12h14" />
           </svg>
-          Start a Trip
+          Start a Trip Free
         </Link>
 
         <Link
           href="/join"
-          className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.97]"
           style={{
             background: "var(--cream)",
             color: "var(--ink)",
@@ -378,8 +415,7 @@ function EmptyState() {
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           Join a Trip
@@ -464,7 +500,7 @@ export default function TripsPage() {
 
   return (
     <main
-      className="relative flex flex-col min-h-dvh px-6 py-12"
+      className="relative flex flex-col min-h-dvh px-6 py-12 page-enter"
       style={{ background: "var(--sand)" }}
     >
       <div
@@ -524,8 +560,8 @@ export default function TripsPage() {
             {[0, 1].map((i) => (
               <div
                 key={i}
-                className="h-36 rounded-3xl animate-pulse"
-                style={{ background: "var(--cream)", border: "1.5px solid var(--border)" }}
+                className="h-36 rounded-3xl skeleton"
+                style={{ border: "1.5px solid var(--border)" }}
               />
             ))}
           </div>
