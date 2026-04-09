@@ -144,6 +144,7 @@ function OnboardingContent() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
 
+    const completedAt = new Date().toISOString();
     const basePayload = {
       user_id: user.id,
       travel_style: prefs.travelStyle,
@@ -155,19 +156,39 @@ function OnboardingContent() {
       departure_city: prefs.departureCity,
       interests: prefs.interests,
       travel_pace: prefs.travelPace,
-      completed_at: new Date().toISOString(),
+      completed_at: completedAt,
     };
 
+    // When trip_id is NULL, PostgreSQL unique indexes treat NULLs as distinct
+    // (NULL != NULL), so onConflict:"user_id,trip_id" won't find the existing
+    // row and will INSERT a duplicate instead of updating. Use "user_id" alone
+    // when saving the global (no-trip) row.
     const { error } = await supabase.from("user_preferences").upsert(
       { ...basePayload, trip_id: tripId ?? null },
-      { onConflict: "user_id,trip_id" }
+      { onConflict: tripId ? "user_id,trip_id" : "user_id" }
     );
 
     if (error) {
-      console.error("Failed to save preferences:", error);
+      console.error("[onboarding] Failed to save preferences:", error);
       setSaving(false);
       return;
     }
+
+    // Verify the row landed correctly.
+    const verifyQuery = supabase
+      .from("user_preferences")
+      .select("user_id, trip_id, completed_at")
+      .eq("user_id", user.id);
+    const { data: savedRow } = await (
+      tripId ? verifyQuery.eq("trip_id", tripId) : verifyQuery.is("trip_id", null)
+    ).maybeSingle();
+
+    console.log("[onboarding] save verified:", {
+      user_id: user.id,
+      trip_id: tripId ?? null,
+      completed_at: savedRow?.completed_at ?? null,
+      row_found: !!savedRow,
+    });
 
     // When saving globally (no trip context), propagate to all trip-scoped rows
     // so the preferences completion check on each trip page shows "Done".
@@ -194,6 +215,8 @@ function OnboardingContent() {
             );
           if (propErr) {
             console.error("[onboarding] Propagation failed for trip", mt.trip_id, propErr);
+          } else {
+            console.log("[onboarding] Propagated to trip:", mt.trip_id);
           }
         }
       }
