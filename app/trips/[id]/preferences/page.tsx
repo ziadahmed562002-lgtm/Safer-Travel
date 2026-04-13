@@ -106,7 +106,13 @@ export default function PreferencesPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   const inviteUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/join?code=${trip?.invite_code}`
+    ? (() => {
+        const hostname = window.location.hostname.includes("vercel.app")
+          ? "safertravel.net"
+          : window.location.host;
+        const proto = window.location.protocol;
+        return `${proto}//${hostname}/join?code=${trip?.invite_code}`;
+      })()
     : "";
 
   async function copyInvite() {

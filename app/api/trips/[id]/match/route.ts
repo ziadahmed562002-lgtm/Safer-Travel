@@ -181,6 +181,9 @@ Return exactly 3 destinations ordered best to third-best. Prioritise genuine exc
   }
 
   // ── 5. Parse AI response ─────────────────────────────────────────────────
+  function isValidUUID(str: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  }
   const cleaned = rawText
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/, "")
@@ -203,6 +206,11 @@ Return exactly 3 destinations ordered best to third-best. Prioritise genuine exc
     const parsed = JSON.parse(cleaned);
     matches = parsed.matches;
     if (!Array.isArray(matches) || matches.length === 0) throw new Error("No matches");
+    // Sanitise destination_id — AI sometimes returns a name string instead of a UUID
+    matches = matches.map((m) => ({
+      ...m,
+      destination_id: m.destination_id && isValidUUID(m.destination_id) ? m.destination_id : null,
+    }));
     console.log("[match] parsed matches:", matches.length, matches.map((m) => m.name));
   } catch {
     console.error("[match] JSON parse failed. Cleaned text:", cleaned.slice(0, 500));
