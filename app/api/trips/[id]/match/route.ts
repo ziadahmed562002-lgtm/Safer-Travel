@@ -157,7 +157,8 @@ Return ONLY valid JSON — no markdown fences, no explanation outside the JSON s
 Return exactly 3 destinations ordered best to third-best. Prioritise genuine excitement and surprising fit over safe, predictable choices.`;
 
   // ── 4. Call Claude ───────────────────────────────────────────────────────
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  console.log("API key prefix:", process.env.ANTHROPIC_API_KEY?.slice(0, 20));
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
 
   let rawText: string;
   try {
