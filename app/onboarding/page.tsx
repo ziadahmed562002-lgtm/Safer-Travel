@@ -110,6 +110,7 @@ function OnboardingContent() {
   const [step, setStep] = useState(1);
   const [prefs, setPrefs] = useState<Prefs>(INITIAL);
   const [saving, setSaving] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   const totalSteps = 9;
   const progress = (step / totalSteps) * 100;
@@ -140,101 +141,115 @@ function OnboardingContent() {
   }
 
   async function finish() {
+    console.log("[onboarding] finish() called, step:", step, "tripId:", tripId);
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/login"); return; }
-
-    const completedAt = new Date().toISOString();
-    const basePayload = {
-      user_id: user.id,
-      travel_style: prefs.travelStyle,
-      budget_max: Math.round(prefs.budget),
-      trip_length: prefs.tripLength,
-      flight_preference: prefs.flightPref,
-      hotel_preference: prefs.hotelPref,
-      amenities: prefs.amenities,
-      departure_city: prefs.departureCity,
-      interests: prefs.interests,
-      travel_pace: prefs.travelPace,
-      completed_at: completedAt,
-    };
-
-    // When trip_id is NULL, PostgreSQL unique indexes treat NULLs as distinct
-    // (NULL != NULL), so onConflict:"user_id,trip_id" won't find the existing
-    // row and will INSERT a duplicate instead of updating. Use "user_id" alone
-    // when saving the global (no-trip) row.
-    const { error } = await supabase.from("user_preferences").upsert(
-      { ...basePayload, trip_id: tripId ?? null },
-      { onConflict: tripId ? "user_id,trip_id" : "user_id" }
-    );
-
-    if (error) {
-      console.error("[onboarding] Failed to save preferences:", error);
-      setSaving(false);
-      return;
-    }
-
-    // Verify the row landed correctly.
-    const verifyQuery = supabase
-      .from("user_preferences")
-      .select("user_id, trip_id, completed_at")
-      .eq("user_id", user.id);
-    const { data: savedRow } = await (
-      tripId ? verifyQuery.eq("trip_id", tripId) : verifyQuery.is("trip_id", null)
-    ).maybeSingle();
-
-    console.log("[onboarding] save verified:", {
-      user_id: user.id,
-      trip_id: tripId ?? null,
-      completed_at: savedRow?.completed_at ?? null,
-      row_found: !!savedRow,
-    });
-
-    // When saving globally (no trip context), propagate to all trip-scoped rows
-    // so the preferences completion check on each trip page shows "Done".
-    // We upsert each trip row individually to avoid a bulk-upsert silently
-    // discarding conflicts when trip_id IS NULL (PostgreSQL NULL != NULL in
-    // unique constraints, so the array upsert path can misbehave).
-    if (!tripId) {
-      const { data: memberTrips, error: memberErr } = await supabase
-        .from("trip_members")
-        .select("trip_id")
-        .eq("user_id", user.id);
-
-      if (memberErr) {
-        console.error("[onboarding] Failed to load member trips:", memberErr);
+    setFinishError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSaving(false);
+        router.push("/login");
+        return;
       }
 
-      if (memberTrips && memberTrips.length > 0) {
-        for (const mt of memberTrips) {
-          const { error: propErr } = await supabase
-            .from("user_preferences")
-            .upsert(
-              { ...basePayload, trip_id: mt.trip_id },
-              { onConflict: "user_id,trip_id" }
-            );
-          if (propErr) {
-            console.error("[onboarding] Propagation failed for trip", mt.trip_id, propErr);
-          } else {
-            console.log("[onboarding] Propagated to trip:", mt.trip_id);
+      const completedAt = new Date().toISOString();
+      const basePayload = {
+        user_id: user.id,
+        travel_style: prefs.travelStyle,
+        budget_max: Math.round(prefs.budget),
+        trip_length: prefs.tripLength,
+        flight_preference: prefs.flightPref,
+        hotel_preference: prefs.hotelPref,
+        amenities: prefs.amenities,
+        departure_city: prefs.departureCity,
+        interests: prefs.interests,
+        travel_pace: prefs.travelPace,
+        completed_at: completedAt,
+      };
+
+      // When trip_id is NULL, PostgreSQL unique indexes treat NULLs as distinct
+      // (NULL != NULL), so onConflict:"user_id,trip_id" won't find the existing
+      // row and will INSERT a duplicate instead of updating. Use "user_id" alone
+      // when saving the global (no-trip) row.
+      const { error } = await supabase.from("user_preferences").upsert(
+        { ...basePayload, trip_id: tripId ?? null },
+        { onConflict: tripId ? "user_id,trip_id" : "user_id" }
+      );
+
+      if (error) {
+        console.error("[onboarding] Failed to save preferences:", error);
+        setFinishError(error.message);
+        setSaving(false);
+        return;
+      }
+
+      // Verify the row landed correctly.
+      const verifyQuery = supabase
+        .from("user_preferences")
+        .select("user_id, trip_id, completed_at")
+        .eq("user_id", user.id);
+      const { data: savedRow } = await (
+        tripId ? verifyQuery.eq("trip_id", tripId) : verifyQuery.is("trip_id", null)
+      ).maybeSingle();
+
+      console.log("[onboarding] save verified:", {
+        user_id: user.id,
+        trip_id: tripId ?? null,
+        completed_at: savedRow?.completed_at ?? null,
+        row_found: !!savedRow,
+      });
+
+      // When saving globally (no trip context), propagate to all trip-scoped rows
+      // so the preferences completion check on each trip page shows "Done".
+      // We upsert each trip row individually to avoid a bulk-upsert silently
+      // discarding conflicts when trip_id IS NULL (PostgreSQL NULL != NULL in
+      // unique constraints, so the array upsert path can misbehave).
+      if (!tripId) {
+        const { data: memberTrips, error: memberErr } = await supabase
+          .from("trip_members")
+          .select("trip_id")
+          .eq("user_id", user.id);
+
+        if (memberErr) {
+          console.error("[onboarding] Failed to load member trips:", memberErr);
+        }
+
+        if (memberTrips && memberTrips.length > 0) {
+          for (const mt of memberTrips) {
+            const { error: propErr } = await supabase
+              .from("user_preferences")
+              .upsert(
+                { ...basePayload, trip_id: mt.trip_id },
+                { onConflict: "user_id,trip_id" }
+              );
+            if (propErr) {
+              console.error("[onboarding] Propagation failed for trip", mt.trip_id, propErr);
+            } else {
+              console.log("[onboarding] Propagated to trip:", mt.trip_id);
+            }
           }
         }
       }
-    }
 
-    if (tripId) {
-      const { data: trip } = await supabase
-        .from("trips")
-        .select("selected_destination")
-        .eq("id", tripId)
-        .single();
-      if (trip?.selected_destination) {
-        router.push(`/trips/${tripId}/plan`);
+      if (tripId) {
+        const { data: trip } = await supabase
+          .from("trips")
+          .select("selected_destination")
+          .eq("id", tripId)
+          .single();
+        if (trip?.selected_destination) {
+          router.push(`/trips/${tripId}/plan`);
+        } else {
+          router.push(`/trips/${tripId}/preferences`);
+        }
       } else {
-        router.push(`/trips/${tripId}/preferences`);
+        router.push("/trips/new");
       }
-    } else {
-      router.push("/trips/new");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[onboarding] finish() threw:", msg);
+      setFinishError(msg);
+      setSaving(false);
     }
   }
 
@@ -336,6 +351,7 @@ function OnboardingContent() {
             onChange={(v) => setPrefs((p) => ({ ...p, travelPace: v }))}
             onFinish={finish}
             saving={saving}
+            finishError={finishError}
           />
         )}
         </div>
@@ -814,11 +830,13 @@ function Step9({
   onChange,
   onFinish,
   saving,
+  finishError,
 }: {
   value: string;
   onChange: (v: string) => void;
   onFinish: () => void;
   saving: boolean;
+  finishError: string | null;
 }) {
   return (
     <>
@@ -862,7 +880,7 @@ function Step9({
       <button
         onClick={onFinish}
         disabled={!value || saving}
-        className="w-full py-4 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-40"
+        className="w-full py-4 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
         style={{
           background: !value || saving ? "var(--border)" : "var(--teal)",
           color: !value || saving ? "var(--ink-muted)" : "var(--cream)",
@@ -870,8 +888,19 @@ function Step9({
           boxShadow: !value || saving ? "none" : "0 4px 16px rgba(46,125,107,0.24)",
         }}
       >
+        {saving && (
+          <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+        )}
         {saving ? "Saving…" : "All done — let's go ✈️"}
       </button>
+      {finishError && (
+        <p className="text-sm text-center mt-2" style={{ color: "var(--error, #e53e3e)", fontFamily: "var(--font-dm-sans)" }}>
+          {finishError}
+        </p>
+      )}
     </>
   );
 }
